@@ -15,12 +15,18 @@ function Logout() {
     useEffect(() => {
         const savedLoginTime = localStorage.getItem('loginTime');
         const savedBreaks = JSON.parse(localStorage.getItem('breaks')) || [];
+        const savedExpectedLogoutTime = localStorage.getItem('expectedLogoutTime');
 
         if (savedLoginTime) {
             const loginDate = new Date(savedLoginTime);
             setLoginTime(loginDate);
-            const logoutTime = new Date(loginDate.getTime() + 8 * 60 * 60 * 1000);
+            const hoursToAdd = loginDate.getDay() === 6 ? 5 : 8; // Saturday or not
+            const logoutTime = new Date(loginDate.getTime() + hoursToAdd * 60 * 60 * 1000);
             setExpectedLogoutTime(logoutTime);
+        }
+
+        if (savedExpectedLogoutTime) {
+            setExpectedLogoutTime(new Date(savedExpectedLogoutTime));
         }
 
         const formattedBreaks = savedBreaks.map(b => ({
@@ -29,6 +35,19 @@ function Logout() {
             duration: b.duration
         }));
         setBreaks(formattedBreaks);
+
+        // Calculate total break duration and update expected logout time
+        const totalBreakDuration = formattedBreaks.reduce((acc, b) => {
+            const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
+            const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
+            return acc + durationInMs;
+        }, 0);
+
+        if (expectedLogoutTime) {
+            const updatedLogoutTime = new Date(expectedLogoutTime.getTime() + totalBreakDuration);
+            setExpectedLogoutTime(updatedLogoutTime);
+            localStorage.setItem('expectedLogoutTime', updatedLogoutTime.toISOString());
+        }
     }, []);
 
     useEffect(() => {
@@ -50,10 +69,8 @@ function Logout() {
         localStorage.setItem('loginTime', now.toISOString());
 
         const isSaturday = now.getDay() === 6; // 6 corresponds to Saturday
-
         const hoursToAdd = isSaturday ? 5 : 8;
         const logoutTime = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
-
         setExpectedLogoutTime(logoutTime);
         localStorage.setItem('expectedLogoutTime', logoutTime.toISOString());
     };
@@ -82,12 +99,14 @@ function Logout() {
             const newBreaks = [...breaks, newBreak];
             setBreaks(newBreaks);
 
+            // Calculate total break duration including the new break
             const totalBreakDuration = newBreaks.reduce((acc, b) => {
                 const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
                 const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
                 return acc + durationInMs;
             }, 0);
 
+            // Update expected logout time if it's already set
             if (expectedLogoutTime) {
                 const updatedLogoutTime = new Date(expectedLogoutTime.getTime() + totalBreakDuration);
                 setExpectedLogoutTime(updatedLogoutTime);
@@ -152,7 +171,7 @@ function Logout() {
             {loginTime && (
                 <Typography variant="p">
                     Logged In Time: {loginTime.toLocaleTimeString('en-US', timeOptions)}<br />
-                    Expected Logout Time: {expectedLogoutTime.toLocaleTimeString('en-US', timeOptions)}
+                    Expected Logout Time: {expectedLogoutTime?.toLocaleTimeString('en-US', timeOptions)}
                 </Typography>
             )}
             <Stack p={2} justifyContent='center' alignItems='center'>
