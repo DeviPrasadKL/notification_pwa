@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@mui/material';
 
@@ -9,12 +8,11 @@ function Logout() {
     const [breakEnd, setBreakEnd] = useState(null);
     const [breaks, setBreaks] = useState([]);
     const [isBreakInProgress, setIsBreakInProgress] = useState(false);
-    const [elapsedTime, setElapsedTime] = useState(0); // in milliseconds
+    const [elapsedTime, setElapsedTime] = useState(0);
     const [openDialog, setOpenDialog] = useState(false);
     const timerRef = useRef(null);
 
     useEffect(() => {
-        // Load data from local storage on component mount
         const savedLoginTime = localStorage.getItem('loginTime');
         const savedBreaks = JSON.parse(localStorage.getItem('breaks')) || [];
 
@@ -25,7 +23,6 @@ function Logout() {
             setExpectedLogoutTime(logoutTime);
         }
 
-        // Convert savedBreaks dates back to Date objects
         const formattedBreaks = savedBreaks.map(b => ({
             start: new Date(b.start),
             end: new Date(b.end),
@@ -35,25 +32,30 @@ function Logout() {
     }, []);
 
     useEffect(() => {
-        // Start or stop timer based on break status
         if (isBreakInProgress) {
             timerRef.current = setInterval(() => {
-                setElapsedTime(prev => prev + 1000); // increment by 1 second
+                setElapsedTime(prev => prev + 1000); 
             }, 1000);
         } else {
             clearInterval(timerRef.current);
             setElapsedTime(0);
         }
 
-        return () => clearInterval(timerRef.current); // cleanup on unmount or stop
+        return () => clearInterval(timerRef.current);
     }, [isBreakInProgress]);
 
     const handleLogin = () => {
         const now = new Date();
         setLoginTime(now);
         localStorage.setItem('loginTime', now.toISOString());
-        const logoutTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+        
+        const isSaturday = now.getDay() === 6; // 6 corresponds to Saturday
+        
+        const hoursToAdd = isSaturday ? 5 : 8;
+        const logoutTime = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
+        
         setExpectedLogoutTime(logoutTime);
+        localStorage.setItem('expectedLogoutTime', logoutTime.toISOString());
     };
 
     const handleBreakStart = () => {
@@ -80,14 +82,12 @@ function Logout() {
             const newBreaks = [...breaks, newBreak];
             setBreaks(newBreaks);
 
-            // Calculate the total break duration in milliseconds
             const totalBreakDuration = newBreaks.reduce((acc, b) => {
                 const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
                 const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
                 return acc + durationInMs;
             }, 0);
 
-            // Update the expected logout time by adding the total break duration
             if (expectedLogoutTime) {
                 const updatedLogoutTime = new Date(expectedLogoutTime.getTime() + totalBreakDuration);
                 setExpectedLogoutTime(updatedLogoutTime);
@@ -112,7 +112,6 @@ function Logout() {
         setOpenDialog(false);
     };
 
-    // Formatting options for time display
     const timeOptions = {
         hour: '2-digit',
         minute: '2-digit',
@@ -120,10 +119,35 @@ function Logout() {
         hour12: true
     };
 
+    function formatDate(date) {
+        const weekdayOptions = { weekday: 'short' };
+        const dayOptions = { day: '2-digit' };
+        const monthOptions = { month: '2-digit' };
+    
+        const weekday = new Intl.DateTimeFormat('en-US', weekdayOptions).format(date);
+        const day = new Intl.DateTimeFormat('en-US', dayOptions).format(date);
+        const month = new Intl.DateTimeFormat('en-US', monthOptions).format(date);
+    
+        return `${weekday} ${day}/${month}`;
+    }
+
+    const calculateTotalBreakDuration = () => {
+        const totalDuration = breaks.reduce((acc, b) => {
+            const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
+            const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
+            return acc + durationInMs;
+        }, 0);
+
+        const totalMinutes = Math.floor(totalDuration / (1000 * 60));
+        const totalSeconds = Math.floor(totalDuration / 1000) % 60;
+
+        return `${totalMinutes}m ${totalSeconds}s`;
+    };
+
     return (
         <Container>
             <Typography variant="h4" gutterBottom>
-                {loginTime ? `Date: ${loginTime.toLocaleDateString()}` : 'No login time recorded'}
+                {loginTime ? `Date: ${formatDate(loginTime)}` : 'No login time recorded'}
             </Typography>
             {loginTime && (
                 <Typography variant="p">
@@ -134,7 +158,7 @@ function Logout() {
             <Stack p={2}>
                 <Button variant="contained" color='success' onClick={handleLogin} disabled={!!loginTime}>Login</Button>
                 <Button variant="contained" onClick={handleBreakStart} disabled={!loginTime || isBreakInProgress}>Break Start</Button>
-                <Button variant="contained" onClick={handleBreakEnd} disabled={!isBreakInProgress}>Break End</Button>
+                <Button variant="contained" color='error' onClick={handleBreakEnd} disabled={!isBreakInProgress}>Break End</Button>
             </Stack>
 
             {isBreakInProgress && (
@@ -143,26 +167,32 @@ function Logout() {
                 </Typography>
             )}
 
-            {breaks.length !== 0 && <TableContainer component={Paper} style={{ marginTop: 20 }}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Break Start</TableCell>
-                            <TableCell>Break End</TableCell>
-                            <TableCell>Break Duration</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {breaks.map((breakRecord, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{new Date(breakRecord.start).toLocaleTimeString('en-US', timeOptions)}</TableCell>
-                                <TableCell>{new Date(breakRecord.end).toLocaleTimeString('en-US', timeOptions)}</TableCell>
-                                <TableCell>{breakRecord.duration}</TableCell>
+            {breaks.length !== 0 && (
+                <TableContainer component={Paper} style={{ marginTop: 20 }}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Break Start</TableCell>
+                                <TableCell>Break End</TableCell>
+                                <TableCell>Break Duration</TableCell>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>}
+                        </TableHead>
+                        <TableBody>
+                            {breaks.map((breakRecord, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{new Date(breakRecord.start).toLocaleTimeString('en-US', timeOptions)}</TableCell>
+                                    <TableCell>{new Date(breakRecord.end).toLocaleTimeString('en-US', timeOptions)}</TableCell>
+                                    <TableCell>{breakRecord.duration}</TableCell>
+                                </TableRow>
+                            ))}
+                            <TableRow>
+                                <TableCell colSpan={2} style={{ fontWeight: 'bold' }}>Total Break Duration</TableCell>
+                                <TableCell style={{ fontWeight: 'bold' }}>{calculateTotalBreakDuration()}</TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
 
             <Button variant="outlined" color="error" onClick={handleClearData} style={{ marginTop: 20 }}>
                 Clear Data
@@ -174,8 +204,8 @@ function Logout() {
                     <Typography>Are you sure you want to clear all data?</Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => handleDialogClose(true)} color="primary">Yes</Button>
                     <Button onClick={() => handleDialogClose(false)} color="secondary">No</Button>
+                    <Button onClick={() => handleDialogClose(true)} color="primary">Yes</Button>
                 </DialogActions>
             </Dialog>
         </Container>
