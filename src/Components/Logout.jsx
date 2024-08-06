@@ -34,7 +34,7 @@ function Logout() {
     useEffect(() => {
         if (isBreakInProgress) {
             timerRef.current = setInterval(() => {
-                setElapsedTime(prev => prev + 1000); 
+                setElapsedTime(prev => prev + 1000);
             }, 1000);
         } else {
             clearInterval(timerRef.current);
@@ -48,12 +48,12 @@ function Logout() {
         const now = new Date();
         setLoginTime(now);
         localStorage.setItem('loginTime', now.toISOString());
-        
+
         const isSaturday = now.getDay() === 6; // 6 corresponds to Saturday
-        
+
         const hoursToAdd = isSaturday ? 5 : 8;
         const logoutTime = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
-        
+
         setExpectedLogoutTime(logoutTime);
         localStorage.setItem('expectedLogoutTime', logoutTime.toISOString());
     };
@@ -123,11 +123,11 @@ function Logout() {
         const weekdayOptions = { weekday: 'short' };
         const dayOptions = { day: '2-digit' };
         const monthOptions = { month: '2-digit' };
-    
+
         const weekday = new Intl.DateTimeFormat('en-US', weekdayOptions).format(date);
         const day = new Intl.DateTimeFormat('en-US', dayOptions).format(date);
         const month = new Intl.DateTimeFormat('en-US', monthOptions).format(date);
-    
+
         return `${weekday} ${day}/${month}`;
     }
 
@@ -155,10 +155,10 @@ function Logout() {
                     Expected Logout Time: {expectedLogoutTime.toLocaleTimeString('en-US', timeOptions)}
                 </Typography>
             )}
-            <Stack p={2}>
-                <Button variant="contained" color='success' onClick={handleLogin} disabled={!!loginTime}>Login</Button>
-                <Button variant="contained" onClick={handleBreakStart} disabled={!loginTime || isBreakInProgress}>Break Start</Button>
-                <Button variant="contained" color='error' onClick={handleBreakEnd} disabled={!isBreakInProgress}>Break End</Button>
+            <Stack p={2} justifyContent='center' alignItems='center'>
+                <Button variant="contained" color='success' onClick={handleLogin} sx={{ display: !!loginTime ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '50%' }} disabled={!!loginTime}>Login</Button>
+                <Button sx={{ display: !loginTime || isBreakInProgress ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '50%' }} variant="contained" onClick={handleBreakStart} disabled={!loginTime || isBreakInProgress}>Break Start</Button>
+                <Button sx={{ display: !isBreakInProgress ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '50%' }} variant="contained" color='error' onClick={handleBreakEnd} disabled={!isBreakInProgress}>Break End</Button>
             </Stack>
 
             {isBreakInProgress && (
