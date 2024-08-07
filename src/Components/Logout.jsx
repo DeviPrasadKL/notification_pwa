@@ -11,11 +11,18 @@ function Logout() {
     const [elapsedTime, setElapsedTime] = useState(0);
     const [openDialog, setOpenDialog] = useState(false);
     const timerRef = useRef(null);
+    const [breakStartedAt, setBreakStartedAt] = useState(null);
 
     useEffect(() => {
         const savedLoginTime = localStorage.getItem('loginTime');
         const savedBreaks = JSON.parse(localStorage.getItem('breaks')) || [];
         const savedExpectedLogoutTime = localStorage.getItem('expectedLogoutTime');
+        const breakExists = localStorage.getItem('breakStartTime');
+        if (breakExists) {
+            setBreakStartedAt(breakExists);
+            setIsBreakInProgress(true);
+            setBreakStart(new Date(breakExists));
+        }
 
         if (savedLoginTime) {
             const loginDate = new Date(savedLoginTime);
@@ -53,7 +60,9 @@ function Logout() {
     useEffect(() => {
         if (isBreakInProgress) {
             timerRef.current = setInterval(() => {
-                setElapsedTime(prev => prev + 1000);
+                const timeStartedAt = new Date(breakStartedAt);
+                const secondsPassed = (new Date().getTime() - timeStartedAt.getTime()) / 1000;
+                setElapsedTime(secondsPassed);
             }, 1000);
         } else {
             clearInterval(timerRef.current);
@@ -76,11 +85,16 @@ function Logout() {
     };
 
     const handleBreakStart = () => {
-        setBreakStart(new Date());
+        const now = new Date
+        setBreakStart(now);
         setIsBreakInProgress(true);
+        localStorage.setItem('breakStartTime', now.toISOString());
+        setBreakStartedAt(now.toISOString());
     };
 
     const handleBreakEnd = () => {
+        localStorage.removeItem('breakStartTime');
+        setBreakStartedAt(null);
         if (isBreakInProgress && breakStart) {
             const now = new Date();
             setBreakEnd(now);
@@ -99,16 +113,9 @@ function Logout() {
             const newBreaks = [...breaks, newBreak];
             setBreaks(newBreaks);
 
-            // Calculate total break duration including the new break
-            const totalBreakDuration = newBreaks.reduce((acc, b) => {
-                const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
-                const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
-                return acc + durationInMs;
-            }, 0);
-
             // Update expected logout time if it's already set
             if (expectedLogoutTime) {
-                const updatedLogoutTime = new Date(expectedLogoutTime.getTime() + totalBreakDuration);
+                const updatedLogoutTime = new Date(expectedLogoutTime.getTime() + duration);
                 setExpectedLogoutTime(updatedLogoutTime);
                 localStorage.setItem('expectedLogoutTime', updatedLogoutTime.toISOString());
             }
@@ -182,7 +189,7 @@ function Logout() {
 
             {isBreakInProgress && (
                 <Typography variant="h6" style={{ marginTop: 20 }}>
-                    Break Timer: {Math.floor(elapsedTime / 1000)} seconds
+                    Break Timer: {Math.floor(elapsedTime)} seconds
                 </Typography>
             )}
 
