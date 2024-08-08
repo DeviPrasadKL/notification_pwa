@@ -85,7 +85,7 @@ function Logout() {
     };
 
     const handleBreakStart = () => {
-        const now = new Date
+        const now = new Date();
         setBreakStart(now);
         setIsBreakInProgress(true);
         localStorage.setItem('breakStartTime', now.toISOString());
