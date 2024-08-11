@@ -326,21 +326,22 @@ function Logout() {
                         </TableBody>
                     </Table>
                 </TableContainer>
-
             )}
 
-            <Stack direction="row" spacing={2} style={{ marginTop: 20 }}>
-                <TextField
-                    label="Add Break Time (minutes)"
-                    type="number"
-                    value={manualBreakDuration}
-                    onChange={(e) => setManualBreakDuration(e.target.value)}
-                    inputProps={{ min: 0 }}
-                />
-                <Button variant="contained" color="primary" onClick={handleAddManualBreak}>
-                    Add Break
-                </Button>
-            </Stack>
+            {loginTime && (
+                <Stack direction="row" spacing={2} style={{ marginTop: 20 }}>
+                    <TextField
+                        label="Add Break Time (minutes)"
+                        type="number"
+                        value={manualBreakDuration}
+                        onChange={(e) => setManualBreakDuration(e.target.value)}
+                        inputProps={{ min: 0 }}
+                    />
+                    <Button variant="contained" color="primary" onClick={handleAddManualBreak}>
+                        Add Break
+                    </Button>
+                </Stack>
+            )}
 
             <Stack>
                 <Button variant="outlined" color="secondary" onClick={() => setLoginHoursDialogOpen(true)} style={{ marginTop: 20 }}>
@@ -367,7 +368,6 @@ function Logout() {
                 setOpenDialog={setOpenDialog}
                 handleDialogClose={handleDialogClose}
             />
-
         </Container>
     );
 }
