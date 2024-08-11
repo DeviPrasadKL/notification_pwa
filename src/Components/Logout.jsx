@@ -147,20 +147,20 @@ function Logout() {
     const handleDialogClose = (confirm) => {
         if (confirm) {
             const savedLoginHours = localStorage.getItem('loginHours');
-            
+
             localStorage.clear();
-            
+
             if (savedLoginHours) {
                 localStorage.setItem('loginHours', savedLoginHours);
             }
-    
+
             setLoginTime(null);
             setExpectedLogoutTime(null);
             setBreaks([]);
         }
         setOpenDialog(false);
     };
-    
+
 
     const handleAddManualBreak = () => {
         const minutes = parseInt(manualBreakDuration, 10);
@@ -282,7 +282,7 @@ function Logout() {
                     Expected Logout Time: {expectedLogoutTime?.toLocaleTimeString('en-US', timeOptions)}
                 </Typography>
             )}
-            
+
             <Stack p={2} justifyContent='center' alignItems='center'>
                 <Button variant="contained" color='success' onClick={handleLogin} sx={{ display: !!loginTime ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '50%' }} disabled={!!loginTime}>Login</Button>
                 <Button sx={{ display: !loginTime || isBreakInProgress ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '50%' }} variant="contained" onClick={handleBreakStart} disabled={!loginTime || isBreakInProgress}>Break Start</Button>
@@ -338,14 +338,19 @@ function Logout() {
                         onChange={(e) => setManualBreakDuration(e.target.value)}
                         inputProps={{ min: 0 }}
                     />
-                    <Button variant="contained" color="primary" onClick={handleAddManualBreak}>
+                    <Button variant="contained" color="primary"
+                        onClick={handleAddManualBreak}
+                        disabled={manualBreakDuration === ''}
+                    >
                         Add Break
                     </Button>
                 </Stack>
             )}
 
             <Stack>
-                <Button variant="outlined" color="secondary" onClick={() => setLoginHoursDialogOpen(true)} style={{ marginTop: 20 }}>
+                <Button variant="outlined" color="secondary"
+                    onClick={() => setLoginHoursDialogOpen(true)}
+                    style={{ marginTop: 20 }}>
                     Login hours Settings
                 </Button>
 
