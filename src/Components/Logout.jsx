@@ -146,13 +146,21 @@ function Logout() {
 
     const handleDialogClose = (confirm) => {
         if (confirm) {
+            const savedLoginHours = localStorage.getItem('loginHours');
+            
             localStorage.clear();
+            
+            if (savedLoginHours) {
+                localStorage.setItem('loginHours', savedLoginHours);
+            }
+    
             setLoginTime(null);
             setExpectedLogoutTime(null);
             setBreaks([]);
         }
         setOpenDialog(false);
     };
+    
 
     const handleAddManualBreak = () => {
         const minutes = parseInt(manualBreakDuration, 10);
