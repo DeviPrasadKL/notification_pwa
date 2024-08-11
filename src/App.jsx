@@ -1,12 +1,12 @@
 import { Box } from "@mui/material"
-import Logout from "./Components/Logout"
+import ThemeChanger from "./Components/ThemeChanger"
 
 function App() {
 
   return (
     <>
       <Box>
-        <Logout />
+        <ThemeChanger/>
       </Box>
     </>
   )

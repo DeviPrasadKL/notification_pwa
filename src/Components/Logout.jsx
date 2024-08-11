@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@mui/material';
+import { Button, Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, TextField, IconButton } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import LoginHoursSettings from './LoginHoursSettings';
+import CloseConfirm from './CloseConfirm';
 
 function Logout() {
     const [loginTime, setLoginTime] = useState(null);
@@ -10,14 +13,20 @@ function Logout() {
     const [isBreakInProgress, setIsBreakInProgress] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [openDialog, setOpenDialog] = useState(false);
+    const [manualBreakDuration, setManualBreakDuration] = useState('');
+    const [loginHoursDialogOpen, setLoginHoursDialogOpen] = useState(false);
+    const [loginHours, setLoginHours] = useState({ weekday: 8, saturday: 5 });
     const timerRef = useRef(null);
     const [breakStartedAt, setBreakStartedAt] = useState(null);
 
     useEffect(() => {
+        // Load login time, breaks, expected logout time, and login hours from local storage
         const savedLoginTime = localStorage.getItem('loginTime');
         const savedBreaks = JSON.parse(localStorage.getItem('breaks')) || [];
         const savedExpectedLogoutTime = localStorage.getItem('expectedLogoutTime');
+        const savedLoginHours = JSON.parse(localStorage.getItem('loginHours')) || { weekday: 8, saturday: 5 };
         const breakExists = localStorage.getItem('breakStartTime');
+
         if (breakExists) {
             setBreakStartedAt(breakExists);
             setIsBreakInProgress(true);
@@ -27,9 +36,7 @@ function Logout() {
         if (savedLoginTime) {
             const loginDate = new Date(savedLoginTime);
             setLoginTime(loginDate);
-            const hoursToAdd = loginDate.getDay() === 6 ? 5 : 8; // Saturday or not
-            const logoutTime = new Date(loginDate.getTime() + hoursToAdd * 60 * 60 * 1000);
-            setExpectedLogoutTime(logoutTime);
+            updateExpectedLogoutTime(loginDate, savedLoginHours);
         }
 
         if (savedExpectedLogoutTime) {
@@ -43,18 +50,10 @@ function Logout() {
         }));
         setBreaks(formattedBreaks);
 
-        // Calculate total break duration and update expected logout time
-        const totalBreakDuration = formattedBreaks.reduce((acc, b) => {
-            const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
-            const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
-            return acc + durationInMs;
-        }, 0);
+        updateTotalBreakDuration(formattedBreaks);
 
-        if (expectedLogoutTime) {
-            const updatedLogoutTime = new Date(expectedLogoutTime.getTime() + totalBreakDuration);
-            setExpectedLogoutTime(updatedLogoutTime);
-            localStorage.setItem('expectedLogoutTime', updatedLogoutTime.toISOString());
-        }
+        // Load login hours from local storage
+        setLoginHours(savedLoginHours);
     }, []);
 
     useEffect(() => {
@@ -72,16 +71,33 @@ function Logout() {
         return () => clearInterval(timerRef.current);
     }, [isBreakInProgress]);
 
+    const updateExpectedLogoutTime = (loginDate, hours = loginHours) => {
+        const isSaturday = loginDate.getDay() === 6; // 6 corresponds to Saturday
+        const hoursToAdd = isSaturday ? hours.saturday : hours.weekday;
+        const logoutTime = new Date(loginDate.getTime() + hoursToAdd * 60 * 60 * 1000);
+        setExpectedLogoutTime(logoutTime);
+        localStorage.setItem('expectedLogoutTime', logoutTime.toISOString());
+    };
+
+    const updateTotalBreakDuration = (formattedBreaks) => {
+        const totalBreakDuration = formattedBreaks.reduce((acc, b) => {
+            const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
+            const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
+            return acc + durationInMs;
+        }, 0);
+
+        if (expectedLogoutTime) {
+            const updatedLogoutTime = new Date(expectedLogoutTime.getTime() + totalBreakDuration);
+            setExpectedLogoutTime(updatedLogoutTime);
+            localStorage.setItem('expectedLogoutTime', updatedLogoutTime.toISOString());
+        }
+    };
+
     const handleLogin = () => {
         const now = new Date();
         setLoginTime(now);
         localStorage.setItem('loginTime', now.toISOString());
-
-        const isSaturday = now.getDay() === 6; // 6 corresponds to Saturday
-        const hoursToAdd = isSaturday ? 5 : 8;
-        const logoutTime = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
-        setExpectedLogoutTime(logoutTime);
-        localStorage.setItem('expectedLogoutTime', logoutTime.toISOString());
+        updateExpectedLogoutTime(now);
     };
 
     const handleBreakStart = () => {
@@ -138,6 +154,76 @@ function Logout() {
         setOpenDialog(false);
     };
 
+    const handleAddManualBreak = () => {
+        const minutes = parseInt(manualBreakDuration, 10);
+        if (isNaN(minutes) || minutes <= 0) {
+            alert("Please enter a valid number of minutes.");
+            return;
+        }
+
+        const now = new Date();
+        const durationInMs = minutes * 60 * 1000;
+
+        const newBreak = {
+            start: now.toISOString(),
+            end: now.toISOString(),
+            duration: `${minutes}m 0s`
+        };
+
+        const newBreaks = [...breaks, newBreak];
+        setBreaks(newBreaks);
+
+        // Update expected logout time if it's already set
+        if (expectedLogoutTime) {
+            const updatedLogoutTime = new Date(expectedLogoutTime.getTime() + durationInMs);
+            setExpectedLogoutTime(updatedLogoutTime);
+            localStorage.setItem('expectedLogoutTime', updatedLogoutTime.toISOString());
+        }
+
+        localStorage.setItem('breaks', JSON.stringify(newBreaks));
+        setManualBreakDuration(''); // Clear input field
+    };
+
+    const handleDeleteBreak = (index) => {
+        const breakToRemove = breaks[index];
+        const durationToRemove = breakToRemove.duration.split('m').map(part => parseInt(part, 10));
+        const durationToRemoveMs = (durationToRemove[0] || 0) * 60 * 1000 + (durationToRemove[1] || 0) * 1000;
+
+        const updatedBreaks = breaks.filter((_, i) => i !== index);
+        setBreaks(updatedBreaks);
+
+        // Calculate new total break duration
+        const totalBreakDuration = updatedBreaks.reduce((acc, b) => {
+            const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
+            const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
+            return acc + durationInMs;
+        }, 0);
+
+        // Adjust expected logout time
+        if (expectedLogoutTime) {
+            const updatedLogoutTime = new Date(expectedLogoutTime.getTime() - durationToRemoveMs);
+            setExpectedLogoutTime(updatedLogoutTime);
+            localStorage.setItem('expectedLogoutTime', updatedLogoutTime.toISOString());
+        }
+
+        localStorage.setItem('breaks', JSON.stringify(updatedBreaks));
+    };
+
+    const handleLoginHoursChange = (event) => {
+        const { name, value } = event.target;
+        setLoginHours(prev => {
+            const newHours = { ...prev, [name]: parseInt(value, 10) || 0 };
+            localStorage.setItem('loginHours', JSON.stringify(newHours)); // Save to local storage
+            return newHours;
+        });
+    };
+
+    const handleLoginHoursSave = () => {
+        const now = loginTime ? new Date(loginTime) : new Date();
+        updateExpectedLogoutTime(now, loginHours);
+        setLoginHoursDialogOpen(false);
+    };
+
     const timeOptions = {
         hour: '2-digit',
         minute: '2-digit',
@@ -170,6 +256,13 @@ function Logout() {
         return `${totalMinutes}m ${totalSeconds}s`;
     };
 
+    const formatTime = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
     return (
         <Container>
             <Typography variant="h4" gutterBottom>
@@ -189,7 +282,8 @@ function Logout() {
 
             {isBreakInProgress && (
                 <Typography variant="h6" style={{ marginTop: 20 }}>
-                    Break Timer: {Math.floor(elapsedTime)} seconds
+                    Break Timer: {Math.floor(elapsedTime)} seconds<br />
+                    Formatted Timer: {formatTime(Math.floor(elapsedTime))}
                 </Typography>
             )}
 
@@ -201,6 +295,7 @@ function Logout() {
                                 <TableCell>Break Start</TableCell>
                                 <TableCell>Break End</TableCell>
                                 <TableCell>Break Duration</TableCell>
+                                <TableCell>Actions</TableCell> {/* New column for delete icon */}
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -209,31 +304,62 @@ function Logout() {
                                     <TableCell>{new Date(breakRecord.start).toLocaleTimeString('en-US', timeOptions)}</TableCell>
                                     <TableCell>{new Date(breakRecord.end).toLocaleTimeString('en-US', timeOptions)}</TableCell>
                                     <TableCell>{breakRecord.duration}</TableCell>
+                                    <TableCell>
+                                        <IconButton onClick={() => handleDeleteBreak(index)} color="error">
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                             <TableRow>
-                                <TableCell colSpan={2} style={{ fontWeight: 'bold' }}>Total Break Duration</TableCell>
+                                <TableCell colSpan={3} style={{ fontWeight: 'bold' }}>Total Break Duration</TableCell>
                                 <TableCell style={{ fontWeight: 'bold' }}>{calculateTotalBreakDuration()}</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
                 </TableContainer>
+
             )}
 
-            <Button variant="outlined" color="error" onClick={handleClearData} style={{ marginTop: 20 }}>
-                Clear Data
-            </Button>
+            <Stack direction="row" spacing={2} style={{ marginTop: 20 }}>
+                <TextField
+                    label="Add Break Time (minutes)"
+                    type="number"
+                    value={manualBreakDuration}
+                    onChange={(e) => setManualBreakDuration(e.target.value)}
+                    inputProps={{ min: 0 }}
+                />
+                <Button variant="contained" color="primary" onClick={handleAddManualBreak}>
+                    Add Break
+                </Button>
+            </Stack>
 
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-                <DialogTitle>Clear Data</DialogTitle>
-                <DialogContent>
-                    <Typography>Are you sure you want to clear all data?</Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => handleDialogClose(false)} color="secondary">No</Button>
-                    <Button onClick={() => handleDialogClose(true)} color="primary">Yes</Button>
-                </DialogActions>
-            </Dialog>
+            <Stack>
+                <Button variant="outlined" color="secondary" onClick={() => setLoginHoursDialogOpen(true)} style={{ marginTop: 20 }}>
+                    Login hours Settings
+                </Button>
+
+                <Button variant="outlined" color="error" onClick={handleClearData} style={{ marginTop: 20 }}>
+                    Clear Data
+                </Button>
+            </Stack>
+
+            {/* Login Settings */}
+            <LoginHoursSettings
+                setLoginHoursDialogOpen={setLoginHoursDialogOpen}
+                loginHoursDialogOpen={loginHoursDialogOpen}
+                loginHours={loginHours}
+                handleLoginHoursSave={handleLoginHoursSave}
+                handleLoginHoursChange={handleLoginHoursChange}
+            />
+
+            {/* App close confirm dialog */}
+            <CloseConfirm
+                openDialog={openDialog}
+                setOpenDialog={setOpenDialog}
+                handleDialogClose={handleDialogClose}
+            />
+
         </Container>
     );
 }
