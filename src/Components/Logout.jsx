@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, TextField, IconButton } from '@mui/material';
+import { Button, Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, TextField, IconButton, Box } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LoginHoursSettings from './LoginHoursSettings';
 import CloseConfirm from './CloseConfirm';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 function Logout() {
     const [loginTime, setLoginTime] = useState(null);
@@ -143,9 +144,15 @@ function Logout() {
 
     const handleDialogClose = (confirm) => {
         if (confirm) {
+            const themeMode = localStorage.getItem('themeMode');
+
             const savedLoginHours = localStorage.getItem('loginHours');
 
             localStorage.clear();
+
+            if (themeMode) {
+                localStorage.setItem('themeMode', themeMode);
+            }
 
             if (savedLoginHours) {
                 localStorage.setItem('loginHours', savedLoginHours);
@@ -157,6 +164,7 @@ function Logout() {
         }
         setOpenDialog(false);
     };
+
 
     const handleAddManualBreak = () => {
         const minutes = parseInt(manualBreakDuration, 10);
@@ -257,8 +265,15 @@ function Logout() {
         const totalMinutes = Math.floor(totalDuration / (1000 * 60));
         const totalSeconds = Math.floor(totalDuration / 1000) % 60;
 
-        return `${totalMinutes}m ${totalSeconds}s`;
+        if (totalMinutes >= 60) {
+            const totalHours = Math.floor(totalMinutes / 60);
+            const minutesRemaining = totalMinutes % 60;
+            return `${totalHours.toString().padStart(2, '0')}h ${minutesRemaining.toString().padStart(2, '0')}m ${totalSeconds.toString().padStart(2, '0')}s`;
+        } else {
+            return `${totalMinutes}m ${totalSeconds}s`;
+        }
     };
+
 
     const formatTime = (seconds) => {
         const hours = Math.floor(seconds / 3600);
@@ -269,13 +284,20 @@ function Logout() {
 
     return (
         <Container>
-            <Typography variant="h4" gutterBottom>
-                {loginTime ? `Date: ${formatDate(loginTime)}` : 'No login time recorded'}
-            </Typography>
+
+            <Stack flexDirection='row' justifyContent='space-between' alignItems='baseline' pt={2}>
+                <Typography variant="h5" gutterBottom>
+                    {loginTime ? `${formatDate(loginTime)}` : 'No login time recorded'}
+                </Typography>
+                <IconButton onClick={() => setLoginHoursDialogOpen(true)} color='secondary'>
+                    <SettingsIcon />
+                </IconButton>
+            </Stack>
+
             {loginTime && (
                 <Typography variant="p">
-                    Logged In Time: {loginTime.toLocaleTimeString('en-US', timeOptions)}<br />
-                    Expected Logout Time: {expectedLogoutTime?.toLocaleTimeString('en-US', timeOptions)}
+                    Logged In:- {loginTime.toLocaleTimeString('en-US', timeOptions)}<br />
+                    Expected Logout:- {expectedLogoutTime?.toLocaleTimeString('en-US', timeOptions)}
                 </Typography>
             )}
 
@@ -287,8 +309,8 @@ function Logout() {
 
             {isBreakInProgress && (
                 <Typography variant="h6" style={{ marginTop: 20 }}>
-                    Break Timer: {Math.floor(elapsedTime)} seconds<br />
-                    Formatted Timer: {formatTime(Math.floor(elapsedTime))}
+                    {/* Break Timer: {Math.floor(elapsedTime)} seconds<br /> */}
+                    Break Timer: {formatTime(Math.floor(elapsedTime))}
                 </Typography>
             )}
 
@@ -317,8 +339,8 @@ function Logout() {
                                 </TableRow>
                             ))}
                             <TableRow>
-                                <TableCell colSpan={3} style={{ fontWeight: 'bold' }}>Total Break Duration</TableCell>
-                                <TableCell style={{ fontWeight: 'bold' }}>{calculateTotalBreakDuration()}</TableCell>
+                                <TableCell colSpan={2} style={{ fontWeight: 'bold' }}>Total Break Duration</TableCell>
+                                <TableCell colSpan={2} style={{ fontWeight: 'bold' }}>{calculateTotalBreakDuration()}</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -343,17 +365,19 @@ function Logout() {
                 </Stack>
             )}
 
-            <Stack>
-                <Button variant="outlined" color="secondary"
+            {loginTime &&
+                <Stack>
+                    {/* <Button variant="outlined" color="secondary"
                     onClick={() => setLoginHoursDialogOpen(true)}
                     style={{ marginTop: 20 }}>
                     Login hours Settings
-                </Button>
+                </Button> */}
 
-                <Button variant="outlined" color="error" onClick={handleClearData} style={{ marginTop: 20 }}>
-                    Clear Data
-                </Button>
-            </Stack>
+                    <Button variant="outlined" color="error" onClick={handleClearData} style={{ marginTop: 20 }}>
+                        Clear Data
+                    </Button>
+                </Stack>
+            }
 
             {/* Login Settings */}
             <LoginHoursSettings
