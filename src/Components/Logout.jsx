@@ -20,7 +20,6 @@ function Logout() {
     const [breakStartedAt, setBreakStartedAt] = useState(null);
 
     useEffect(() => {
-        // Load login time, breaks, expected logout time, and login hours from local storage
         const savedLoginTime = localStorage.getItem('loginTime');
         const savedBreaks = JSON.parse(localStorage.getItem('breaks')) || [];
         const savedExpectedLogoutTime = localStorage.getItem('expectedLogoutTime');
@@ -36,11 +35,11 @@ function Logout() {
         if (savedLoginTime) {
             const loginDate = new Date(savedLoginTime);
             setLoginTime(loginDate);
-            updateExpectedLogoutTime(loginDate, savedLoginHours);
-        }
-
-        if (savedExpectedLogoutTime) {
-            setExpectedLogoutTime(new Date(savedExpectedLogoutTime));
+            if (!savedExpectedLogoutTime) {
+                updateExpectedLogoutTime(loginDate, savedLoginHours);
+            } else {
+                setExpectedLogoutTime(new Date(savedExpectedLogoutTime));
+            }
         }
 
         const formattedBreaks = savedBreaks.map(b => ({
@@ -51,8 +50,6 @@ function Logout() {
         setBreaks(formattedBreaks);
 
         updateTotalBreakDuration(formattedBreaks);
-
-        // Load login hours from local storage
         setLoginHours(savedLoginHours);
     }, []);
 
@@ -160,7 +157,6 @@ function Logout() {
         }
         setOpenDialog(false);
     };
-
 
     const handleAddManualBreak = () => {
         const minutes = parseInt(manualBreakDuration, 10);
