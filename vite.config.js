@@ -50,5 +50,4 @@ const manifestForPlugin = {
 };
 export default defineConfig({
   plugins: [react(), VitePWA(manifestForPlugin)],
-  base: "/Logout_legend/"
 });
