@@ -21,6 +21,7 @@ function Logout({ darkMode, handleThemeToggle }) {
     const [breakStartedAt, setBreakStartedAt] = useState(null);
 
     useEffect(() => {
+        // Load saved data from localStorage on component mount
         const savedLoginTime = localStorage.getItem('loginTime');
         const savedBreaks = JSON.parse(localStorage.getItem('breaks')) || [];
         const savedExpectedLogoutTime = localStorage.getItem('expectedLogoutTime');
@@ -55,6 +56,7 @@ function Logout({ darkMode, handleThemeToggle }) {
     }, []);
 
     useEffect(() => {
+        // Timer for tracking elapsed time during a break
         if (isBreakInProgress) {
             timerRef.current = setInterval(() => {
                 const timeStartedAt = new Date(breakStartedAt);
@@ -69,6 +71,13 @@ function Logout({ darkMode, handleThemeToggle }) {
         return () => clearInterval(timerRef.current);
     }, [isBreakInProgress]);
 
+    /**
+     * Updates the expected logout time based on login time and login hours.
+     * @param {Date} loginDate - The login date and time.
+     * @param {Object} hours - Object with login hours for weekdays and Saturdays.
+     * @param {number} hours.weekday - Number of work hours for weekdays.
+     * @param {number} hours.saturday - Number of work hours for Saturdays.
+     */
     const updateExpectedLogoutTime = (loginDate, hours = loginHours) => {
         const isSaturday = loginDate.getDay() === 6; // 6 corresponds to Saturday
         const hoursToAdd = isSaturday ? hours.saturday : hours.weekday;
@@ -77,6 +86,13 @@ function Logout({ darkMode, handleThemeToggle }) {
         localStorage.setItem('expectedLogoutTime', logoutTime.toISOString());
     };
 
+    /** 
+     * Updates the total break duration and adjusts the expected logout time based on the provided breaks.
+     * @param {Array<{ start: Date, end: Date, duration: string }>} formattedBreaks - An array of break objects, each containing:
+     *   - {Date} start - The start time of the break.
+     *   - {Date} end - The end time of the break.
+     *   - {string} duration - The duration of the break in the format "Xm Ys" (e.g., "15m 30s").
+     */
     const updateTotalBreakDuration = (formattedBreaks) => {
         const totalBreakDuration = formattedBreaks.reduce((acc, b) => {
             const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
@@ -91,6 +107,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         }
     };
 
+    /** 
+     * Handles login action, stores the current time as login time and updates expected logout time.
+     */
     const handleLogin = () => {
         const now = new Date();
         setLoginTime(now);
@@ -98,6 +117,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         updateExpectedLogoutTime(now);
     };
 
+    /** 
+     * Starts a break, records the start time and updates the state and localStorage.
+     */
     const handleBreakStart = () => {
         const now = new Date();
         setBreakStart(now);
@@ -106,6 +128,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         setBreakStartedAt(now.toISOString());
     };
 
+    /** 
+     * Ends a break, calculates the break duration, updates the list of breaks and the expected logout time.
+     */
     const handleBreakEnd = () => {
         localStorage.removeItem('breakStartTime');
         setBreakStartedAt(null);
@@ -138,14 +163,16 @@ function Logout({ darkMode, handleThemeToggle }) {
         }
     };
 
-    /** Function which just opens the dialouge box of clear data */
+    /** 
+     * Opens the confirmation dialog for clearing data.
+     */
     const handleClearData = () => {
         setOpenDialog(true);
     };
 
-    /**Function to clear data of users from localstorage
-     * @param {Boolean} confirm value from dialouge box
-     * This function doesn't clear thememode and loginHours from localstorage
+    /**
+     * Clears all user data from localStorage except theme mode and login hours.
+     * @param {boolean} confirm - Whether the user confirmed the data clearing action.
      */
     const handleDialogClose = (confirm) => {
         if (confirm) {
@@ -170,7 +197,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         setOpenDialog(false);
     };
 
-    /**Function to add breaks by typing the break minutes if user missed to add */
+    /**
+     * Adds a manual break with a specified duration and updates the list of breaks and expected logout time.
+     */
     const handleAddManualBreak = () => {
         const minutes = parseInt(manualBreakDuration, 10);
         if (isNaN(minutes) || minutes <= 0) {
@@ -201,8 +230,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         setManualBreakDuration(''); // Clear input field
     };
 
-    /**Function to delete the breaks and update in localstorage
-     * @param {number} index index of the row which as to be deleted
+    /**
+     * Function to delete the breaks and update in localstorage
+     * @param {number} index - Index of the row which has to be deleted
      */
     const handleDeleteBreak = (index) => {
         const breakToRemove = breaks[index];
@@ -229,8 +259,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         localStorage.setItem('breaks', JSON.stringify(updatedBreaks));
     };
 
-    /**Function to store the login hours settigs in local storage
-     * @param {event} event
+    /**
+     * Function to store the login hours settigs in local storage
+     * @param {event} event - Event of change to get name and value
      */
     const handleLoginHoursChange = (event) => {
         const { name, value } = event.target;
@@ -241,7 +272,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         });
     };
 
-    /** Function to save login hours settings and adjust expected logout accordingly */
+    /**
+     * Function to save login hours settings and adjust expected logout accordingly
+     */
     const handleLoginHoursSave = () => {
         const now = loginTime ? new Date(loginTime) : new Date();
         updateExpectedLogoutTime(now, loginHours);
@@ -255,9 +288,10 @@ function Logout({ darkMode, handleThemeToggle }) {
         hour12: true
     };
 
-    /**Funtion to show current weekday and date on top
-     * @param {Date} date
-     * @returns {String} weekday day/month 
+    /**
+     * Funtion to show current weekday and date on top
+     * @param {Date} date - Login time
+     * @returns {String} - Weekday day/month 
      */
     function formatDate(date) {
         const weekdayOptions = { weekday: 'short' };
@@ -271,8 +305,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         return `${weekday} ${day}/${month}`;
     }
 
-    /** Function which calculates the total break duration by adding all the breaks
-     * @returns {String} total break duration in hh:mm:ss / mm:ss
+    /** 
+     * Function which calculates the total break duration by adding all the breaks
+     * @returns {String} - Total break duration in hh:mm:ss / mm:ss
      */
     const calculateTotalBreakDuration = () => {
         const totalDuration = breaks.reduce((acc, b) => {
@@ -293,9 +328,10 @@ function Logout({ darkMode, handleThemeToggle }) {
         }
     };
 
-    /**Helper function to check if a break can be deleted
-     * @param {Date} breakStartTime
-     * @returns {Boolean} disable delete ot not
+    /**
+     * Helper function to check if a break can be deleted
+     * @param {Date} breakStartTime - Break start time of that row (breakRecord.start)
+     * @returns {Boolean} - Disable delete button or not
      */
     const canDeleteBreak = (breakStartTime) => {
         const breakStartDate = new Date(breakStartTime);
@@ -305,9 +341,10 @@ function Logout({ darkMode, handleThemeToggle }) {
         return diffMinutes <= 2;
     };
 
-    /** Funtion to format the timer of break
-     * @param {number} seconds 
-     * @returns {String} hh:mm:ss
+    /** 
+     * Funtion to format the timer of break
+     * @param {number} seconds - Seconds from timer
+     * @returns {String} - Time in the format hh:mm:ss
      */
     const formatTime = (seconds) => {
         const hours = Math.floor(seconds / 3600);
