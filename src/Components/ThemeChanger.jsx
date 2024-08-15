@@ -36,9 +36,12 @@ export default function ThemeChanger() {
                     gap: 2
                 }}
             >
-                <Logout />
+                <Logout
+                    darkMode={darkMode}
+                    handleThemeToggle={handleThemeToggle}
+                />
 
-                <Stack flexDirection='row' gap={2}>
+                {/* <Stack flexDirection='row' gap={2}>
                     <Typography variant="h6" gutterBottom>
                         {darkMode ? 'Dark Mode' : 'Light Mode'}
                     </Typography>
@@ -47,7 +50,7 @@ export default function ThemeChanger() {
                         onChange={handleThemeToggle}
                         inputProps={{ 'aria-label': 'toggle theme' }}
                     />
-                </Stack>
+                </Stack> */}
             </Box>
         </ThemeProvider>
     )

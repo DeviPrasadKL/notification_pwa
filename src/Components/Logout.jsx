@@ -5,7 +5,7 @@ import LoginHoursSettings from './LoginHoursSettings';
 import CloseConfirm from './CloseConfirm';
 import SettingsIcon from '@mui/icons-material/Settings';
 
-function Logout() {
+function Logout({ darkMode, handleThemeToggle }) {
     const [loginTime, setLoginTime] = useState(null);
     const [expectedLogoutTime, setExpectedLogoutTime] = useState(null);
     const [breakStart, setBreakStart] = useState(null);
@@ -274,6 +274,15 @@ function Logout() {
         }
     };
 
+    // Helper function to check if a break can be deleted
+    const canDeleteBreak = (breakStartTime) => {
+        const breakStartDate = new Date(breakStartTime);
+        const now = new Date();
+        const diffMinutes = (now - breakStartDate) / (1000 * 60);
+        // Return true if less than or equal to 2 minutes
+        return diffMinutes <= 2;
+    };
+
 
     const formatTime = (seconds) => {
         const hours = Math.floor(seconds / 3600);
@@ -332,7 +341,11 @@ function Logout() {
                                     <TableCell>{new Date(breakRecord.end).toLocaleTimeString('en-US', timeOptions)}</TableCell>
                                     <TableCell>{breakRecord.duration}</TableCell>
                                     <TableCell>
-                                        <IconButton onClick={() => handleDeleteBreak(index)} color="error">
+                                        <IconButton
+                                            onClick={() => handleDeleteBreak(index)}
+                                            color="error"
+                                            disabled={!canDeleteBreak(breakRecord.start)}
+                                        >
                                             <DeleteIcon />
                                         </IconButton>
                                     </TableCell>
@@ -366,7 +379,7 @@ function Logout() {
             )}
 
             {loginTime &&
-                <Stack>
+                <Stack pb={2}>
                     {/* <Button variant="outlined" color="secondary"
                     onClick={() => setLoginHoursDialogOpen(true)}
                     style={{ marginTop: 20 }}>
@@ -386,6 +399,8 @@ function Logout() {
                 loginHours={loginHours}
                 handleLoginHoursSave={handleLoginHoursSave}
                 handleLoginHoursChange={handleLoginHoursChange}
+                darkMode={darkMode}
+                handleThemeToggle={handleThemeToggle}
             />
 
             {/* App close confirm dialog */}
