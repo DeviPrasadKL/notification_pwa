@@ -380,12 +380,6 @@ function Logout({ darkMode, handleThemeToggle }) {
 
             {loginTime &&
                 <Stack pb={2}>
-                    {/* <Button variant="outlined" color="secondary"
-                    onClick={() => setLoginHoursDialogOpen(true)}
-                    style={{ marginTop: 20 }}>
-                    Login hours Settings
-                </Button> */}
-
                     <Button variant="outlined" color="error" onClick={handleClearData} style={{ marginTop: 20 }}>
                         Clear Data
                     </Button>
