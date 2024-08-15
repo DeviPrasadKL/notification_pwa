@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Box, CssBaseline, createTheme, ThemeProvider } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, CssBaseline, createTheme, ThemeProvider, useTheme } from '@mui/material';
 import Logout from './Logout';
 
 /**
@@ -24,6 +24,13 @@ export default function ThemeChanger() {
         palette: {
             mode: darkMode ? 'dark' : 'light',
         },
+        transitions: {
+            create: (props, options) => createTheme().transitions.create(props, {
+                ...options,
+                duration: '0.2s',
+                easing: 'ease',
+            }),
+        },
     });
 
     /**
@@ -35,6 +42,15 @@ export default function ThemeChanger() {
         localStorage.setItem('themeMode', JSON.stringify(newMode));
     };
 
+    useEffect(() => {
+        // Apply a CSS transition to the body element for smooth theme changes
+        const body = document.body;
+        body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+        return () => {
+            body.style.transition = '';
+        };
+    }, [darkMode]);
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
@@ -44,7 +60,7 @@ export default function ThemeChanger() {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 2
+                    gap: 2,
                 }}
             >
                 <Logout
@@ -53,5 +69,5 @@ export default function ThemeChanger() {
                 />
             </Box>
         </ThemeProvider>
-    )
+    );
 }

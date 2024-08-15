@@ -331,7 +331,7 @@ function Logout({ darkMode, handleThemeToggle }) {
     /**
      * Helper function to check if a break can be deleted
      * @param {Date} breakStartTime - Break start time of that row (breakRecord.start)
-     * @returns {Boolean} - Disable delete button or not
+     * @returns {Boolean} - Disable delete button o not
      */
     const canDeleteBreak = (breakStartTime) => {
         const breakStartDate = new Date(breakStartTime);
