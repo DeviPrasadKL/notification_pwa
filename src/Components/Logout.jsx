@@ -243,6 +243,10 @@ function Logout({ darkMode, handleThemeToggle }) {
         hour12: true
     };
 
+    /**Funtion to show current weekday and date on top
+     * @param {Date} date
+     * @returns {String} weekday day/month 
+     */
     function formatDate(date) {
         const weekdayOptions = { weekday: 'short' };
         const dayOptions = { day: '2-digit' };
@@ -255,6 +259,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         return `${weekday} ${day}/${month}`;
     }
 
+    /** Function which calculates the total break duration by adding all the breaks
+     * @returns {String} total break duration in hh:mm:ss / mm:ss
+     */
     const calculateTotalBreakDuration = () => {
         const totalDuration = breaks.reduce((acc, b) => {
             const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
@@ -274,7 +281,10 @@ function Logout({ darkMode, handleThemeToggle }) {
         }
     };
 
-    // Helper function to check if a break can be deleted
+    /**Helper function to check if a break can be deleted
+     * @param {Date} breakStartTime
+     * @returns {Boolean} disable delete ot not
+     */
     const canDeleteBreak = (breakStartTime) => {
         const breakStartDate = new Date(breakStartTime);
         const now = new Date();
@@ -283,7 +293,10 @@ function Logout({ darkMode, handleThemeToggle }) {
         return diffMinutes <= 2;
     };
 
-
+    /** Funtion to format the timer of break
+     * @param {number} seconds 
+     * @returns {String} hh:mm:ss
+     */
     const formatTime = (seconds) => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
