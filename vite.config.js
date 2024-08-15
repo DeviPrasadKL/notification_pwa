@@ -40,8 +40,8 @@ const manifestForPlugin = {
       purpose: 'any maskable',
     }
     ],
-    theme_color: '#181818',
-    background_color: '#e0cc3b',
+    theme_color: '#f1e59e',
+    background_color: '#303031',
     display: "standalone",
     scope: '/',
     start_url: "/",
