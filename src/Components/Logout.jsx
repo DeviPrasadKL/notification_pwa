@@ -138,10 +138,15 @@ function Logout({ darkMode, handleThemeToggle }) {
         }
     };
 
+    /** Function which just opens the dialouge box of clear data */
     const handleClearData = () => {
         setOpenDialog(true);
     };
 
+    /**Function to clear data of users from localstorage
+     * @param {Boolean} confirm value from dialouge box
+     * This function doesn't clear thememode and loginHours from localstorage
+     */
     const handleDialogClose = (confirm) => {
         if (confirm) {
             const themeMode = localStorage.getItem('themeMode');
@@ -165,7 +170,7 @@ function Logout({ darkMode, handleThemeToggle }) {
         setOpenDialog(false);
     };
 
-
+    /**Function to add breaks by typing the break minutes if user missed to add */
     const handleAddManualBreak = () => {
         const minutes = parseInt(manualBreakDuration, 10);
         if (isNaN(minutes) || minutes <= 0) {
@@ -196,6 +201,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         setManualBreakDuration(''); // Clear input field
     };
 
+    /**Function to delete the breaks and update in localstorage
+     * @param {number} index index of the row which as to be deleted
+     */
     const handleDeleteBreak = (index) => {
         const breakToRemove = breaks[index];
         const durationToRemove = breakToRemove.duration.split('m').map(part => parseInt(part, 10));
@@ -221,6 +229,9 @@ function Logout({ darkMode, handleThemeToggle }) {
         localStorage.setItem('breaks', JSON.stringify(updatedBreaks));
     };
 
+    /**Function to store the login hours settigs in local storage
+     * @param {event} event
+     */
     const handleLoginHoursChange = (event) => {
         const { name, value } = event.target;
         setLoginHours(prev => {
@@ -230,6 +241,7 @@ function Logout({ darkMode, handleThemeToggle }) {
         });
     };
 
+    /** Function to save login hours settings and adjust expected logout accordingly */
     const handleLoginHoursSave = () => {
         const now = loginTime ? new Date(loginTime) : new Date();
         updateExpectedLogoutTime(now, loginHours);
