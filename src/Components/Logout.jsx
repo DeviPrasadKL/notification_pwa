@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy } from 'react';
+//Lazy loading
+import Loadable from './Lodable';
+const SettingsSection = Loadable(lazy(()=> import('./SettingsSection')));
+const CloseConfirm = Loadable(lazy(()=> import('../UIComponents/ConfirmationDialog')));
+const LogoutAndCalculate = Loadable(lazy(()=> import('./LogoutAndCalculate')));
+
 import { Button, Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, TextField, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SettingsSection from './SettingsSection';
-import CloseConfirm from '../UIComponents/ConfirmationDialog';
 import SettingsIcon from '@mui/icons-material/Settings';
-import LogoutAndCalculate from './LogoutAndCalculate';
-import RecordsViewer from './RecordsViewer';
 import useTotalLoggedInHours from '../CustomHooks/useTotalLoggedInHours';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -426,11 +428,11 @@ export default function Logout({ darkMode, handleThemeToggle }) {
 
     /**
      * Helper function to check if a break can be deleted
-     * @param {Date} breakStartTime - Break start time of that row (breakRecord.start)
+     * @param {Date} breakEndTime - Break start time of that row (breakRecord.start)
      * @returns {Boolean} - Disable delete button o not
      */
-    const canDeleteBreak = (breakStartTime) => {
-        const breakStartDate = new Date(breakStartTime);
+    const canDeleteBreak = (breakEndTime) => {
+        const breakStartDate = new Date(breakEndTime);
         const now = new Date();
         const diffMinutes = (now - breakStartDate) / (1000 * 60);
         // Return true if less than or equal to 2 minutes
@@ -553,7 +555,7 @@ export default function Logout({ darkMode, handleThemeToggle }) {
                                         <IconButton
                                             onClick={() => handleDeleteBreak(index)}
                                             color="error"
-                                            disabled={!canDeleteBreak(breakRecord.start)}
+                                            disabled={!canDeleteBreak(breakRecord.end)}
                                         >
                                             <DeleteIcon />
                                         </IconButton>
