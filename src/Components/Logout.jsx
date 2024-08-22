@@ -5,6 +5,10 @@ import SettingsSection from './SettingsSection';
 import CloseConfirm from '../UIComponents/ConfirmationDialog';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutAndCalculate from './LogoutAndCalculate';
+import RecordsViewer from './RecordsViewer';
+import useTotalLoggedInHours from '../CustomHooks/useTotalLoggedInHours';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 
 /**
  * A component for which renders all the other main componennts inside with all the logic.
@@ -26,6 +30,9 @@ export default function Logout({ darkMode, handleThemeToggle }) {
     const [breakStartedAt, setBreakStartedAt] = useState(null);
     const [isLoggedOut, setIsLoggedOut] = useState(false);
     const [logoutTime, setLogoutTime] = useState(null);
+    const [isEditingLoginTime, setIsEditingLoginTime] = useState(false);
+    const [editedLoginTime, setEditedLoginTime] = useState('');
+
     const timerRef = useRef(null);
 
     useEffect(() => {
@@ -36,6 +43,9 @@ export default function Logout({ darkMode, handleThemeToggle }) {
         const savedLoginHours = JSON.parse(localStorage.getItem('loginHours')) || { weekday: 8, saturday: 5 };
         const breakExists = localStorage.getItem('breakStartTime');
         const savedLogoutTime = localStorage.getItem('logoutTime');
+
+        // Call removeOldRecords function to clean up old records
+        removeOldRecords();
 
         if (breakExists) {
             setBreakStartedAt(breakExists);
@@ -69,7 +79,7 @@ export default function Logout({ darkMode, handleThemeToggle }) {
             setIsLoggedOut(true);
         } else {
             setIsLoggedOut(false);
-            setLogoutTime(null)
+            setLogoutTime(null);
         }
     }, []);
 
@@ -88,6 +98,33 @@ export default function Logout({ darkMode, handleThemeToggle }) {
 
         return () => clearInterval(timerRef.current);
     }, [isBreakInProgress]);
+
+    useEffect(() => {
+        if (loginTime) {
+            setEditedLoginTime(loginTime.toTimeString().substr(0, 5)); // Format to HH:mm
+        }
+    }, [loginTime]);
+
+
+    //Hook to get Total Logged in hours without breaks
+    const { totalLoggedInHours } = useTotalLoggedInHours(loginTime, logoutTime, breaks);
+
+    /**
+     * Function to remove records older than 5 days
+     */
+    const removeOldRecords = () => {
+        const now = new Date();
+        const cutoffDate = new Date(now.setDate(now.getDate() - 5)).toISOString().split('T')[0]; // Date 5 days ago
+
+        // Retrieve existing records from localStorage
+        const existingRecords = JSON.parse(localStorage.getItem('records')) || [];
+
+        // Filter out records older than 5 days
+        const updatedRecords = existingRecords.filter(record => record.date >= cutoffDate);
+
+        // Save the updated records back to localStorage
+        localStorage.setItem('records', JSON.stringify(updatedRecords));
+    };
 
     /**
      * Updates the expected logout time based on login time and login hours.
@@ -192,29 +229,66 @@ export default function Logout({ darkMode, handleThemeToggle }) {
 
     /**
      * Clears all user data from localStorage except theme mode and login hours.
+     * Also adds a record with the total break time.
+     */
+    const clearDataAndAddRecords = () => {
+        // Store current data before clearing
+        if (loginTime) {
+            // Calculate total logged in time in seconds
+            const totalLoggedInTime = (new Date().getTime() - loginTime.getTime()) / 1000;
+            const currentDate = new Date(loginTime).toISOString().split('T')[0]; // Save date in YYYY-MM-DD format
+
+            // Create a new record object
+            const newRecord = {
+                date: currentDate,
+                loginTime: loginTime.toISOString(),
+                expectedLogoutTime: expectedLogoutTime?.toISOString() || null,
+                breaks: breaks,
+                logoutTime: logoutTime || null,
+                totalLoggedInTime: totalLoggedInHours, // Total logged in time in seconds
+                totalBreakTime: calculateTotalBreakDuration() // Total break time
+            };
+
+            // Retrieve existing records from localStorage
+            const existingRecords = JSON.parse(localStorage.getItem('records')) || [];
+
+            // Check if a record for the current date already exists
+            const existingRecordIndex = existingRecords.findIndex(record => record.date === currentDate);
+
+            if (existingRecordIndex >= 0) {
+                // Replace existing record
+                existingRecords[existingRecordIndex] = newRecord;
+            } else {
+                // Add new record
+                existingRecords.push(newRecord);
+            }
+
+            // Save the updated records to localStorage
+            localStorage.setItem('records', JSON.stringify(existingRecords));
+        }
+
+        // Clear current data
+        setLoginTime(null);
+        setExpectedLogoutTime(null);
+        setBreaks([]);
+        setIsLoggedOut(false);
+        setLogoutTime(null);
+
+        // Clear relevant items from localStorage
+        localStorage.removeItem('loginTime');
+        localStorage.removeItem('breaks');
+        localStorage.removeItem('breakStartTime');
+        localStorage.removeItem('expectedLogoutTime');
+        localStorage.removeItem('logoutTime');
+    };
+
+    /**
+     * Clears all user data from localStorage except theme mode and login hours.
      * @param {boolean} confirm - Whether the user confirmed the data clearing action.
      */
     const handleDialogClose = (confirm) => {
         if (confirm) {
-            const themeMode = localStorage.getItem('themeMode');
-
-            const savedLoginHours = localStorage.getItem('loginHours');
-
-            localStorage.clear();
-
-            if (themeMode) {
-                localStorage.setItem('themeMode', themeMode);
-            }
-
-            if (savedLoginHours) {
-                localStorage.setItem('loginHours', savedLoginHours);
-            }
-
-            setLoginTime(null);
-            setExpectedLogoutTime(null);
-            setBreaks([]);
-            setIsLoggedOut(false);
-            setOpenDialog(false);
+            clearDataAndAddRecords();
         }
         setOpenDialog(false);
     };
@@ -375,10 +449,27 @@ export default function Logout({ darkMode, handleThemeToggle }) {
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const handleTimeSave = () => {
+        const [hours, minutes] = editedLoginTime.split(':').map(Number);
+        const updatedLoginTime = new Date(loginTime);
+        updatedLoginTime.setHours(hours, minutes);
+
+        setLoginTime(updatedLoginTime);
+        localStorage.setItem('loginTime', updatedLoginTime.toISOString());
+        setIsEditingLoginTime(false);
+        updateExpectedLogoutTime(updatedLoginTime);
+    };
+
+    const handleTimeChange = (event) => {
+        setEditedLoginTime(event.target.value);
+    };
+
+    const showAddBreakManually = loginTime && !isBreakInProgress && !isLoggedOut;
+
     return (
         <Container>
 
-            <Stack flexDirection='row' justifyContent='space-between' alignItems='baseline' pt={2}>
+            <Stack flexDirection='row' justifyContent='space-between' alignItems='baseline'>
                 <Typography variant="h5" gutterBottom>
                     {loginTime ? `${formatDate(loginTime)}` : 'No login time recorded'}
                 </Typography>
@@ -388,8 +479,34 @@ export default function Logout({ darkMode, handleThemeToggle }) {
             </Stack>
 
             {loginTime && (
+                <Stack direction="row" alignItems="center" justifyContent='space-between'>
+                    {isEditingLoginTime ? (
+                        <>
+                            <input
+                                type="time"
+                                value={editedLoginTime}
+                                onChange={handleTimeChange}
+                            />
+                            <IconButton onClick={handleTimeSave} color='primary'>
+                                <SaveIcon />
+                            </IconButton>
+                        </>
+                    ) : (
+                        <>
+                            <Typography variant="body1">
+                                Logged In: {loginTime.toLocaleTimeString('en-US', timeOptions)}
+                            </Typography>
+                            <IconButton onClick={() => setIsEditingLoginTime(true)} color='secondary'>
+                                <EditIcon />
+                            </IconButton>
+                        </>
+                    )}
+                </Stack>
+            )}
+
+            {loginTime && (
                 <Typography variant="p">
-                    Logged In:- {loginTime.toLocaleTimeString('en-US', timeOptions)}<br />
+                    {/* Logged In:- {loginTime.toLocaleTimeString('en-US', timeOptions)}<br /> */}
                     Expected Logout:- {expectedLogoutTime?.toLocaleTimeString('en-US', timeOptions)}
                 </Typography>
             )}
@@ -397,13 +514,13 @@ export default function Logout({ darkMode, handleThemeToggle }) {
             <Stack p={2} justifyContent='center' alignItems='center'>
                 {/* Show the clear data button when user is logged out */}
                 {isLoggedOut ?
-                    <Button sx={{ height: '8rem', width: '8rem', borderRadius: '50%' }} variant="contained" color='secondary' onClick={handleClearData} disabled={!isLoggedOut}>Clear Data</Button>
+                    <Button sx={{ height: '8rem', width: '8rem', borderRadius: '12%' }} variant="contained" color='secondary' onClick={handleClearData} disabled={!isLoggedOut}>Clear Data</Button>
                     :
                     <>
                         {/* else show Login, break start and break end buttons */}
-                        <Button variant="contained" color='success' onClick={handleLogin} sx={{ display: !!loginTime ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '50%' }} disabled={!!loginTime}>Login</Button>
-                        <Button sx={{ display: !loginTime || isBreakInProgress ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '50%' }} variant="contained" onClick={handleBreakStart} disabled={!loginTime || isBreakInProgress || isLoggedOut}>Break Start</Button>
-                        <Button sx={{ display: !isBreakInProgress ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '50%' }} variant="contained" color='error' onClick={handleBreakEnd} disabled={!isBreakInProgress}>Break End</Button>
+                        <Button variant="contained" color='success' onClick={handleLogin} sx={{ display: !!loginTime ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '12%' }} disabled={!!loginTime}>Login</Button>
+                        <Button sx={{ display: !loginTime || isBreakInProgress ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '12%' }} variant="contained" onClick={handleBreakStart} disabled={!loginTime || isBreakInProgress || isLoggedOut}>Break Start</Button>
+                        <Button sx={{ display: !isBreakInProgress ? 'none' : 'block', height: '8rem', width: '8rem', borderRadius: '12%' }} variant="contained" color='error' onClick={handleBreakEnd} disabled={!isBreakInProgress}>Break End</Button>
                     </>
                 }
             </Stack>
@@ -452,7 +569,7 @@ export default function Logout({ darkMode, handleThemeToggle }) {
                 </TableContainer>
             )}
 
-            {loginTime && !isBreakInProgress && (
+            {showAddBreakManually && (
                 <Stack direction="row" spacing={2} style={{ marginTop: 20 }}>
                     <TextField
                         label="Add Break Time (minutes)"
