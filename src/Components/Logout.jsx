@@ -408,26 +408,19 @@ export default function Logout({ darkMode, handleThemeToggle }) {
         const breakToRemove = breaks[index];
         const durationToRemove = breakToRemove.duration.split('m').map(part => parseInt(part, 10));
         const durationToRemoveMs = (durationToRemove[0] || 0) * 60 * 1000 + (durationToRemove[1] || 0) * 1000;
-
+    
+        // Update breaks array by filtering out the removed break
         const updatedBreaks = breaks.filter((_, i) => i !== index);
         setBreaks(updatedBreaks);
-
-        // Calculate new total break duration
-        const totalBreakDuration = updatedBreaks.reduce((acc, b) => {
-            const [minutes, seconds] = b.duration.split('m').map(part => parseInt(part, 10));
-            const durationInMs = (minutes || 0) * 60 * 1000 + (seconds || 0) * 1000;
-            return acc + durationInMs;
-        }, 0);
-
-        // Adjust expected logout time
+        localStorage.setItem('breaks', JSON.stringify(updatedBreaks));
+    
+        // Adjust expected logout time if it's set
         if (expectedLogoutTime) {
             const updatedLogoutTime = new Date(expectedLogoutTime.getTime() - durationToRemoveMs);
             setExpectedLogoutTime(updatedLogoutTime);
             localStorage.setItem('expectedLogoutTime', updatedLogoutTime.toISOString());
         }
-
-        localStorage.setItem('breaks', JSON.stringify(updatedBreaks));
-    };
+    };    
 
     /**
      * Function to store the login hours settigs in local storage
