@@ -13,7 +13,7 @@ import useTotalLoggedInHours from '../CustomHooks/useTotalLoggedInHours';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 //For analytics
-import ReactGA from 'react-ga';
+import ReactGA from "react-ga4";
 import { useLocation } from 'react-router-dom';
 import { useOfflineEventTracker } from '../CustomHooks/useOfflineEventTracker';
 
@@ -102,7 +102,7 @@ export default function Logout({ darkMode, handleThemeToggle }) {
 
     //For analytics 
     useEffect(() => {
-        ReactGA.pageview(location.pathname + location.search);
+        ReactGA.send({hitType: "pageview", page: location.pathname + location.search, title: "About" });
     }, [location]);
 
     useEffect(() => {

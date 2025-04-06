@@ -4,7 +4,7 @@ import { History as HistoryIcon } from '@mui/icons-material';
 import HomeIcon from '@mui/icons-material/Home';
 import { useNavigate } from 'react-router-dom';
 //For analytics
-import ReactGA from 'react-ga';
+import ReactGA from "react-ga4";
 import { useLocation } from 'react-router-dom';
 
 const sentences = [
@@ -55,7 +55,7 @@ const About = () => {
 
   // Analytics
   useEffect(() => {
-    ReactGA.pageview(location.pathname + location.search);
+    ReactGA.send({hitType: "pageview", page: location.pathname + location.search, title: "About" });
   }, [location]);
 
   return (

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import ReactGA from 'react-ga';
+import ReactGA from "react-ga4";
 import { storeEventLocally, getStoredEvents, clearStoredEvents } from '../Utils/EventUtils';
 
 /**
@@ -13,7 +13,10 @@ export const useOfflineEventTracker = () => {
   const handleEvent = (eventData) => {
     if (navigator.onLine) {
       // Track the event if the user is online
-      ReactGA.event(eventData);
+      ReactGA.event({
+        category: "Offline",
+        action: "User offline"
+      });
     } else {
       // Store the event locally if the user is offline
       storeEventLocally(eventData);
@@ -30,7 +33,10 @@ export const useOfflineEventTracker = () => {
       // Retrieve stored offline events and send them to Google Analytics
       const storedEvents = getStoredEvents();
       storedEvents.forEach(eventData => {
-        ReactGA.event(eventData);
+        ReactGA.event({
+          category: "Online",
+          action: "User online"
+        });
       });
 
       // Clear the stored events after sending

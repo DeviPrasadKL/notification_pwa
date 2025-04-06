@@ -6,7 +6,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 //For analytics
-import ReactGA from 'react-ga';
+import ReactGA from "react-ga4";
 import { useLocation } from 'react-router-dom';
 import { useOfflineEventTracker } from '../CustomHooks/useOfflineEventTracker';
 
@@ -57,7 +57,7 @@ export default function RecordsViewer() {
 
     // Analytics
     useEffect(() => {
-        ReactGA.pageview(location.pathname + location.search);
+        ReactGA.send({hitType: "pageview", page: location.pathname + location.search, title: "About" });
     }, [location]);
 
     /**
