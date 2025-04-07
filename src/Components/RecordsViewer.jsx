@@ -57,7 +57,7 @@ export default function RecordsViewer() {
 
     // Analytics
     useEffect(() => {
-        ReactGA.send({hitType: "pageview", page: location.pathname + location.search, title: "About" });
+        ReactGA.send({hitType: "pageview", page: location.pathname + location.search, title: "History" });
     }, [location]);
 
     /**
