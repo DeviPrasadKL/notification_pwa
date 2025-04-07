@@ -102,7 +102,7 @@ export default function Logout({ darkMode, handleThemeToggle }) {
 
     //For analytics 
     useEffect(() => {
-        ReactGA.send({hitType: "pageview", page: location.pathname + location.search, title: "About" });
+        ReactGA.send({hitType: "pageview", page: location.pathname + location.search, title: "Homescreen" });
     }, [location]);
 
     useEffect(() => {
