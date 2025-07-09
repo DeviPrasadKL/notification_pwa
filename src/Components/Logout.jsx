@@ -7,7 +7,7 @@ const LogoutAndCalculate = Loadable(lazy(() => import('./LogoutAndCalculate')));
 const RecordExistsConfirm = Loadable(lazy(() => import('../UIComponents/RecordExistsConfirm')));
 const BreaksTable = Loadable(lazy(() => import('./BreaksTable')));
 
-import { Button, Container, Typography, Stack, TextField, IconButton, Box } from '@mui/material';
+import { Button, Container, Typography, Stack, TextField, IconButton, Box, Paper } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import useTotalLoggedInHours from '../CustomHooks/useTotalLoggedInHours';
 import EditIcon from '@mui/icons-material/Edit';
@@ -781,6 +781,17 @@ export default function Logout({ darkMode, handleThemeToggle }) {
                 }
             </Stack>
 
+            <Stack justifyContent='center' alignItems='center' py={1}>
+                {loginTime && (
+                    <PieClock
+                        effectiveLoginTime={effectiveLoginTime}
+                        loginTime={loginTime}
+                        loginHours={{ weekday: 8, saturday: 5 }}
+                        displayText={effectiveLoginTime}
+                    />
+                )}
+            </Stack>
+
             {breaks.length !== 0 && (
                 <BreaksTable
                     breaks={breaks}
@@ -808,17 +819,6 @@ export default function Logout({ darkMode, handleThemeToggle }) {
                     </Button>
                 </Stack>
             )}
-
-            <Stack justifyContent='center' alignItems='center' mt={2}>
-                {loginTime && (
-                    <PieClock
-                        effectiveLoginTime={effectiveLoginTime} 
-                        loginTime={loginTime}                  
-                        loginHours={{ weekday: 8, saturday: 5 }} 
-                        displayText={effectiveLoginTime}
-                    />
-                )}
-            </Stack>
 
             {loginTime &&
                 <Stack pb={2}>
