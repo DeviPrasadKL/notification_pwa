@@ -786,7 +786,7 @@ export default function Logout({ darkMode, handleThemeToggle }) {
                     <PieClock
                         effectiveLoginTime={effectiveLoginTime}
                         loginTime={loginTime}
-                        loginHours={{ weekday: 8, saturday: 5 }}
+                        loginHours={loginHours}
                         displayText={effectiveLoginTime}
                     />
                 )}
